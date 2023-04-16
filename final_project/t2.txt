@@ -1,0 +1,96 @@
+DELIMITER //
+CREATE PROCEDURE result()
+BEGIN
+    DECLARE varGameId INT;
+    DECLARE varNewScore FLOAT;
+    DECLARE varReview FLOAT;
+    DECLARE varGlobalSales FLOAT;
+    DECLARE varNewTag VARCHAR(1000);
+    DECLARE varName2 VARCHAR(1000);
+    DECLARE varGlobalSale2 FLOAT;
+    DECLARE varTag2 VARCHAR(1000);
+    DECLARE exit_loop BOOLEAN DEFAULT FALSE;
+    -- DECLARE exit_loop_2 BOOLEAN DEFAULT FALSE;
+
+    DECLARE cusCur CURSOR FOR (
+                            SELECT gameId, review, Sales.Sale_Global
+                            FROM Game_info left join (Sales) using(gameId)
+                            );
+
+    DECLARE cusCur2 CURSOR FOR (
+                            SELECT Game.name, sum(Sale_Global) as totalSale
+                                        FROM Game NATURAL JOIN Sales
+                            Group by Game.name);
+
+    -- DECLARE CONTINUE HANDLER FOR NOT FOUND SET exit_loop = TRUE;
+
+    DROP TABLE IF EXISTS FinalTable;
+    DROP TABLE IF EXISTS FinalTable2;
+
+    CREATE TABLE FinalTable(
+        GameId INT Primary Key,
+        newScore FLOAT,
+        newTag VARCHAR(1000)
+    );
+
+    CREATE TABLE FinalTable2(
+        Name2 VARCHAR(1000),
+        newGlobalSale FLOAT,
+        newTag2 VARCHAR(1000)
+    );
+
+    OPEN cusCur;
+    begin
+        DECLARE exit_loop INT DEFAULT 0;
+        declare continue handler for not FOUND set exit_loop = TRUE;
+    cloop: LOOP
+        FETCH cusCur INTO varGameId, varReview, varGlobalSales;
+        IF(exit_loop) THEN
+            LEAVE cloop;
+        END IF;
+        
+        IF (varReview >= 9 AND varGlobalSales >= 10) THEN
+            SET varNewTag = "Diamond";
+        ELSEIF (varReview >= 7 AND varGlobalSales >= 8) THEN
+            SET varNewTag = "Gold";
+        ELSEIF (varReview >= 4 AND varGlobalSales >= 5) THEN
+            SET varNewTag = "Silver";
+        ELSE
+                SET varNewTag = "Bronze";
+        END IF;
+        SET varNewScore = (varReview * 0.6) + (varGlobalSales * 0.4);
+        INSERT IGNORE INTO FinalTable VALUES (varGameId, varNewScore, varNewTag);
+    END LOOP cloop;
+    END; 
+    CLOSE cusCur;
+
+
+OPEN cusCur2;
+    BEGIN
+        DECLARE exit_loop INT DEFAULT 0;
+        declare continue handler for not FOUND set exit_loop = TRUE;
+
+
+        cloop_2: LOOP
+            FETCH cusCur2 INTO varName2, varGlobalSale2;
+            IF(exit_loop) THEN
+                LEAVE cloop_2;
+            END IF;
+            
+            IF (    varGlobalSale2 >= 30  ) THEN
+                SET varTag2 = "Diamond";
+            ELSEIF (      varGlobalSale2 >= 10    ) THEN
+                SET varTag2 = "Gold";
+            ELSE
+                SET varTag2 = "Silver";
+            END IF;
+                                    
+            INSERT IGNORE INTO FinalTable2 VALUES (varName2, varGlobalSale2, varTag2);
+   
+
+        END LOOP cloop_2;
+CLOSE cusCur2;
+END;
+
+END //
+DELIMITER ;

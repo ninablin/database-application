@@ -1,0 +1,83 @@
+DELIMITER //
+create procedure Result()
+begin
+    declare varReceipeID varchar(10);
+    declare varnum_ingre int;
+    declare varcal int;
+    declare varcallv varchar(20);
+    declare varHardLv varchar(20);
+    declare varTitle varchar(255);
+    declare exit_loop bool default false;
+    declare cur cursor for (select title,T.recipe_id,T.numingredient
+                            From Recipe join (select recipe_id, count(ingredient_id) as numingredient
+                                              from Recipe join Contain using(recipe_id)
+                                              group by recipe_id) as T using(recipe_id));
+                                              
+    declare cur2 cursor for (Select r.recipe_id,r.title,sum(calories * min_qty) as total_calories
+                             From Recipe r natural join Quantity q natural join Ingredient i
+                             Group by r.recipe_id);
+                             
+    drop table if exists NewTable;
+    drop table if exists NewTable2;
+    
+    create table NewTable(
+        ReceipeID varchar(10) Primary Key,
+        title varchar(255),
+        hardlevel varchar(50)
+    );
+    
+    create table NewTable2(
+        ReceipeID varchar(10) Primary Key,
+        title varchar(255),
+        calorieslevel varchar(50)
+    );
+    
+    open cur;
+    begin
+        DECLARE exit_loop INT DEFAULT 0;
+        declare continue handler for not FOUND set exit_loop = TRUE;
+    cloop : loop
+            fetch cur into varTitle, varReceipeID, varnum_ingre;
+            if (exit_loop) then
+                leave cloop;
+            end if;
+            if (varnum_ingre > 7) then 
+                set varHardLv = "Hard";
+            end if;
+            if (varnum_ingre > 3 and varnum_ingre<=7) then 
+                set varHardLv = "Medium";
+            end if;
+            if (varnum_ingre > 0 and varnum_ingre <=3) then 
+                set varHardLv = "easy";
+            end if;
+            insert ignore into NewTable values (varReceipeID,varTitle,varHardLv);
+    end loop cloop;
+    END;
+    close cur;
+    
+ open cur2;
+    begin
+    DECLARE exit_loop INT DEFAULT 0;
+    declare continue handler for not FOUND set exit_loop = TRUE;
+    
+    cloop2 : loop
+            fetch cur2 into  varReceipeID, varTitle,varcal;
+            if (exit_loop) then
+                leave cloop2;
+            end if;
+            if (varcal > 500) then 
+                set varcallv = "high calorie";
+            end if;
+            if (varcal <500) then 
+                set varcallv = "low calorie";
+            end if;
+            insert ignore into NewTable2 values (varReceipeID,varTitle,varcallv);
+    end loop cloop2;
+    close cur2;
+    end;
+
+
+end //
+
+DELIMITER ;
+CALL Result();

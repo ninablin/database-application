@@ -1,0 +1,14 @@
+{% extends 'layouts.html'%}
+
+{% block content %}
+
+    {% for item in targetItem %}
+        <div class="shadow p-3 mb-5 bg-body rounded">
+            <p><span class="fst-italic">Game Id: </span>{{ item.gameId }}</p>
+            <p><span class="fst-italic">Game Name: </span>{{ item.name }}</p>
+            <p><span class="fst-italic">Game Publish Year: </span>{{ item.year }}</p>
+            <p><span class="fst-italic">Game Genre: </span>{{ item.genre }}</p>
+        </div>
+    {% endfor %}
+
+{% endblock content %}

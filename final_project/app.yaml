@@ -1,0 +1,7 @@
+runtime: python38
+instance_class: F1
+env_variables: 
+  MYSQL_USER: binglin
+  MYSQL_PASSWORD: abcd1234
+  MYSQL_DB: 'games'
+  MYSQL_HOST: 35.232.162.242
